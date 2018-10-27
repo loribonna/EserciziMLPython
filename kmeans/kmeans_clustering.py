@@ -4,7 +4,7 @@
 # In[1]:
 
 
-get_ipython().system('pip3 install googledrivedownloader')
+get_ipython().system('pip install googledrivedownloader')
 
 
 # In[2]:
