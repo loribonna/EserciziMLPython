@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from datasets import gaussians_dataset, people_dataset
 from utils import people_visualization, people_visualize_prediction, plot_pegasos_margin
 from adaboost_test import AdaBoost
-
+from svm_ada_classifier import SVM
 #np.random.seed(191090)
 
 def main_people():
@@ -14,7 +14,7 @@ def main_people():
     X_img_train, x_train, y_train, X_img_test, x_test, y_test = people_dataset('data')
     people_visualization(X_img_train, y_train)
 
-    svm_alg = AdaBoost(n_classifiers=10, use_bias=True)
+    svm_alg = AdaBoost(n_classifiers=6, use_bias=True, Base_Classifier=SVM)
 
     # train
     svm_alg.fit_gd(x_train, y_train, verbose=True)

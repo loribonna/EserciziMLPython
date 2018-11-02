@@ -17,7 +17,7 @@ plt.ion()
 
 
 def similarity_function(a, b):
-    weights = np.array([1, 1, 1, 1, 1], dtype=np.float32)
+    weights = np.array([1, 1], dtype=np.float32)
     num_value = np.sum(np.square(a - b) * weights)
     temperature = 0.06
     return np.exp(-num_value / temperature)

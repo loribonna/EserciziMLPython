@@ -3,6 +3,7 @@ import random
 from numpy.linalg import norm
 from numpy import ndarray
 from base_ada_classifier import BaseClassifier
+from random_ada_classifier import RandomClassifier
 
 eps = np.finfo(float).eps
 
@@ -12,12 +13,14 @@ class AdaBoost:
     _classifiers: list = []
     _n_classifiers: int = None
     _use_bias: bool = True
+    _original_labels: ndarray = None
 
-    def __init__(self, n_classifiers, use_bias=True):
+    def __init__(self, n_classifiers, Base_Classifier = RandomClassifier, use_bias=True):
         """ Constructor method """
 
         self._n_classifiers = n_classifiers
         self._use_bias = use_bias
+        self._Base_Classifier = Base_Classifier
 
     def map_y_to_minus_one_plus_one(self, y):
         """
@@ -64,7 +67,7 @@ class AdaBoost:
 
         # loop over epochs
         for e in range(1, self._n_classifiers + 1):
-            cl = BaseClassifier(w)
+            cl = self._Base_Classifier(w, norm_factor=0.975)
             w = cl.fit(X, Y)
 
             self._classifiers.append(cl)
@@ -79,7 +82,8 @@ class AdaBoost:
         n_samples, n_features = X.shape
         combination: ndarray = np.zeros(n_samples)
 
-        for cl in self._classifiers:
+        for cl_i in range(0, self._n_classifiers):
+            cl: BaseClassifier = self._classifiers[cl_i]
             combination += cl.get_reputation() * cl.predict(X)
 
         prediction = np.sign(combination)

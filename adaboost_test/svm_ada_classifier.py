@@ -2,6 +2,7 @@ import numpy as np
 import random
 from numpy.linalg import norm
 from numpy import ndarray
+from base_ada_classifier import BaseClassifier
 eps = np.finfo(float).eps
 
 
@@ -16,40 +17,17 @@ def get_polyn_ker(c, d):
     def polyn_kernel(w, x):
         return np.power(_def_kernel(w,x)+c, d)
 
-class SVM:
+class SVM(BaseClassifier):
     """ Models a Support Vector machine classifier based on the PEGASOS algorithm. """
+    _w_class: ndarray = None
 
-    def __init__(self, n_epochs, lambDa, use_bias=True, kernel=None):
+    def __init__(self, w: ndarray, n_epochs = 100, lambDa = 0.01, kernel=None, norm_factor=0.45):
         """ Constructor method """
+        super(SVM, self).__init__(w, norm_factor)
 
-        # weights placeholder
-        self._w = None
-        self._original_labels = None
         self._n_epochs = n_epochs
         self._lambda = lambDa
-        self._use_bias = use_bias
         self._kernel = _def_kernel if kernel == None else kernel
-
-
-    def map_y_to_minus_one_plus_one(self, y):
-        """
-        Map binary class labels y to -1 and 1
-        """
-        ynew = np.array(y)
-        self._original_labels = np.unique(ynew)
-        assert len(self._original_labels) == 2
-        ynew[ynew == self._original_labels[0]] = -1.0
-        ynew[ynew == self._original_labels[1]] = 1.0
-        return ynew
-
-    def map_y_to_original_values(self, y):
-        """
-        Map binary class labels, in terms of -1 and 1, to the original label set.
-        """
-        ynew = np.array(y)
-        ynew[ynew == -1.0] = self._original_labels[0]
-        ynew[ynew == 1.0] = self._original_labels[1]
-        return ynew
 
     def loss(self, y_true: ndarray, y_pred: ndarray):
         """
@@ -67,17 +45,12 @@ class SVM:
         float
             the value of the pegasos loss.
         """
-        """
-        ###########################
-        Write here the PEGASOS loss.
-        ###########################
-        """
 
-        err = [np.max([0, 1-y_true[i]*y_pred[i]]) for i in range(0, y_true.size)]
+        err = [np.max([0, 1 - y_true[i] * y_pred[i]]) for i in range(0, y_true.size)]
         return np.sum(err) / y_true.size
         # return np.random.normal(loc=100.0, scale=5.0, size=(1,))[0]
 
-    def fit_gd(self, X, Y, verbose=False):
+    def fit(self, X, Y):
         """
         Implements the gradient descent training procedure.
 
@@ -87,18 +60,17 @@ class SVM:
             data. shape=(n_examples, n_features)
         Y: np.array
             labels. shape=(n_examples,)
-        verbose: bool
-            whether or not to print the value of cost function.
+
+        Returns
+        -------
+        w: np.array
+            updated weights
         """
 
-        if self._use_bias:
-            X = np.concatenate([X, np.ones((X.shape[0], 1), dtype=X.dtype)], axis=-1)
-
         n_samples, n_features = X.shape
-        Y = self.map_y_to_minus_one_plus_one(Y)
 
         # initialize weights
-        self._w = np.zeros(shape=(n_features,), dtype=X.dtype)
+        self._w_class = np.zeros(shape=(n_features,), dtype=X.dtype)
 
         t = 0
         # loop over epochs
@@ -106,31 +78,22 @@ class SVM:
             for j in range(n_samples):
                 t += 1
                 n_t = 1 / (t * self._lambda)
-                prod = self._kernel(self._w, X[j])
+                prod = self._kernel(self._w_class, self._w[j] * X[j])
                 rate = 1 - n_t * self._lambda
                 if (Y[j] * prod < 1):
-                    self._w = rate * self._w + n_t * Y[j] * X[j]
+                    self._w_class = rate * self._w_class + n_t * Y[j] * X[j]
                 else:
-                    self._w = rate * self._w
+                    self._w_class = rate * self._w_class
 
-            # predict training data
-            cur_prediction = np.dot(X, self._w)
+        # compute (and print) cost
+        prediction = self.predict(X)
+        # cur_loss = self.loss(y_true=Y, y_pred=np.dot(X, self._w_class))
+        err = self._get_err(Y, prediction)
 
-            # compute (and print) cost
-            cur_loss = self.loss(y_true=Y, y_pred=cur_prediction)
-            if verbose:
-                print("Epoch {} Loss {}".format(e, cur_loss))
+        self._error = err
+        return self._get_updated_w(Y, prediction)
 
     def predict(self, X):
-        if self._use_bias:
-            X = np.concatenate([X, np.ones((X.shape[0], 1), dtype=X.dtype)], axis=-1)
-
-        # prediction = np.array([random.choice(self._original_labels) for i in range(X.shape[0])])
-        """
-        ######################################
-        Write here the PEGASOS inference rule.
-        ######################################
-        """
-        prod = X.dot(self._w)
+        prod = X.dot(self._w_class)
         prediction = np.sign(prod)
-        return self.map_y_to_original_values(prediction)
+        return prediction
