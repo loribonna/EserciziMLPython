@@ -6,6 +6,7 @@ from datasets import gaussians_dataset
 from utils import plot_boundary
 from utils import cmap
 from utils import plot_2d_dataset
+from numpy import ndarray
 
 plt.ion()
 
@@ -31,10 +32,10 @@ class AdaBoostClassifier:
         self.dims = np.zeros(shape=n_learners, dtype=np.int32)
         self.splits = np.zeros(shape=n_learners)
         self.label_above_split = np.zeros(shape=n_learners, dtype=np.int32)
-
+        self.label_below_split = np.zeros(shape=n_learners, dtype=np.int32)
         self.possible_labels = None
 
-    def fit(self, X, Y, verbose=False):
+    def fit(self, X: ndarray, Y: ndarray, verbose=False):
         """
         Trains the model.
 
@@ -61,25 +62,32 @@ class AdaBoostClassifier:
 
         # start training
         for l in range(0, self.n_learners):
-
             # choose the indexes of 'difficult' samples (np.random.choice)
-
+            indexes = np.random.choice(np.arange(0, n), size=n, p=sample_weights)
             # extract 'difficult' samples
-
+            samples = X[indexes]
             # search for a weak classifier
             error = 1
             n_trials = 0
             while error > 0.5:
-
                 # select random feature (np.random.choice)
-
+                f_index = np.random.choice(np.arange(0, d))
+                f_set: ndarray = samples[:, f_index]
+                w_set: ndarray = sample_weights[indexes]
+                y_set: ndarray = Y[indexes]
                 # select random split (np.random.uniform)
-
+                threshold = np.random.uniform(f_set.min(), f_set.max())
                 # select random verse (np.random.choice)
-
+                v = self.possible_labels
+                np.random.shuffle(v)
+                l_above = v[1]
+                l_below = v[0]
                 # compute assignment
-
+                prediction = np.zeros(shape=n)
+                prediction[f_set <= threshold] = v[0]
+                prediction[f_set > threshold] = v[1]
                 # compute error
+                error = np.sum(w_set[prediction != y_set])
 
                 n_trials += 1
                 if n_trials > 100:
@@ -91,11 +99,29 @@ class AdaBoostClassifier:
             # self.dims[l] = ...
             # self.splits[l] = ...
             # self.label_above_split[l] = ...
+            alpha = 0.5 * np.log((1 - error) / error)
+            self.alphas[l] = alpha if error > 0 else 100
+            self.dims[l] = f_index
+            self.label_above_split[l] = l_above
+            self.label_below_split[l] = l_below
+            self.splits[l] = threshold
 
             # update sample weights
 
+            for i in range(n):
+                index = indexes[i]
+                a = -self.alphas[l] if prediction[i] == y_set[i] else self.alphas[l]
+                sample_weights[index] = sample_weights[index] * np.exp(a)
 
-    def predict(self, X):
+            z = 1 / np.sum(sample_weights)
+            sample_weights *= z
+
+            if (verbose):
+                print('Classifier {}: error {}, alpha {}, dim {}, split {}, label above {}, Z {}'.format(
+                    l + 1, error, alpha, f_index, threshold, l_above, z
+                ))
+
+    def predict(self, X: ndarray):
         """
         Function to perform predictions over a set of samples.
         
@@ -114,20 +140,20 @@ class AdaBoostClassifier:
 
         pred_all_learners = np.zeros(shape=(n, self.n_learners))
 
-        for l, cur_dim, cur_split, label_above_split in zip(range(0, self.n_learners), self.dims, self.splits,
-                                                            self.label_above_split):
-
-            label_below_split = -label_above_split
-
+        for l, cur_dim, cur_split, label_above_split, label_below_split in \
+                zip(range(0, self.n_learners), self.dims, self.splits,
+                    self.label_above_split, self.label_below_split):
             # compute assignment
-
+            p = np.zeros(shape=n)
+            p[X[:, cur_dim] > cur_split] = label_above_split
+            p[X[:, cur_dim] <= cur_split] = label_below_split
             # Save assignment of lth weak learner
-
+            pred_all_learners[:, l] = self.alphas[l] * p
         # weight for learners efficiency
 
         # compute predictions
-
-        pred = np.random.choice([-1, 1], size=len(X))  # todo remove me
+        pred_learners = np.sum(pred_all_learners, axis=1)
+        pred = np.sign(pred_learners)
         return pred
 
 
@@ -153,7 +179,8 @@ def main_adaboost():
 
     # evaluate and print error
     error = float(np.sum(P != Y_test)) / Y_test.size
-    print(error)
+    print('Error: {}, Accuracy (1-Error): {}'.format(error, 1 - error))
+
 
 # entry point
 if __name__ == '__main__':

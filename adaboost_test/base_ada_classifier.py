@@ -21,6 +21,7 @@ class BaseClassifier:
         return 0.5 * np.log((1 - self._error) / self._error)
 
     def _get_updated_w(self, Y_test: ndarray, Y_pred: ndarray):
+        # TODO: norm_factor should normalize: sum(w) = 1
         w = np.zeros(self._w.size)
         for i in range(0, self._w.size):
             rep = self.get_reputation()
