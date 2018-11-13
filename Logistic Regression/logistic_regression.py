@@ -3,6 +3,7 @@ from numpy import ndarray
 
 eps = np.finfo(float).eps
 
+
 def sigmoid(x):
     """
     Element-wise sigmoid function
@@ -18,7 +19,7 @@ def sigmoid(x):
         an array having the same shape of x.
     """
 
-    return np.exp(x) / (1 + np.exp(x))
+    return 1 / (1 + np.exp(-x))
 
 
 def loss(y_true: ndarray, y_pred: ndarray):
@@ -42,7 +43,7 @@ def loss(y_true: ndarray, y_pred: ndarray):
     side_1 = - y_true * np.log(y_pred)
     side_2 = (1 - y_true) * np.log(1 - y_pred)
     val = (side_1 - side_2) / n_el
-    return val
+    return - np.mean(val)
 
 
 def dloss_dw(y_true: ndarray, y_pred: ndarray, X: ndarray):
@@ -65,8 +66,10 @@ def dloss_dw(y_true: ndarray, y_pred: ndarray, X: ndarray):
         Has shape=(n_features,)
     """
 
-    n_el = y_true.shape
-    return - X.transpose().dot(y_pred - y_true) / n_el
+    n_el = y_true.shape[0]
+    internal = y_true - y_pred
+    der = np.dot(X.T, internal)
+    return - der / n_el
 
 
 class LogisticRegression:
@@ -102,10 +105,11 @@ class LogisticRegression:
             product = X.dot(self._w)
             predict = sigmoid(product)
 
-            # cost = loss(Y, predict)
-
+            cost = loss(Y, predict)
+            if (verbose):
+               print("Loss at epoch {}: {}".format(e + 1, cost))
             gradient = dloss_dw(Y, predict, X)
-            self._w -= learning_rate * gradient
+            self._w = self._w - learning_rate * gradient
 
     def predict(self, X: ndarray):
         """
@@ -125,5 +129,6 @@ class LogisticRegression:
 
         product = X.dot(self._w)
         predict = sigmoid(product)
-
+        predict[predict > 0.5] = 1
+        predict[predict <= 0.5] = 0
         return predict

@@ -15,7 +15,7 @@ def main():
     logistic_reg = LogisticRegression()
 
     # train
-    logistic_reg.fit_gd(x_train, y_train, n_epochs=10000, learning_rate=0.01, verbose=True)
+    logistic_reg.fit_gd(x_train, y_train, n_epochs=10000, learning_rate=1, verbose=True)
 
     # test
     predictions = logistic_reg.predict(x_test)
