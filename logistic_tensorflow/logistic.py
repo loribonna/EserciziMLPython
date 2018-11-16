@@ -89,7 +89,7 @@ def sigmoid(x):
     """
       Code for the sigmoid function. https://en.wikipedia.org/wiki/Logistic_function
     """
-    calc = tf.div(1., tf.add(1., tf.exp(tf.negative(x))))
+    calc = 1. / (1. + tf.exp(tf.negative(x)))
     return calc
 
 
@@ -98,21 +98,19 @@ def binary_crossentropy(y_true, y_pred):
       Code for the binary cross entropy. https://en.wikipedia.org/wiki/Cross_entropy
     """
 
-    side_1 = y_true * tf.log(y_pred)
-    side_2 = (1 - y_true) * tf.log(1 - y_pred)
+    side_1 = tf.multiply(y_true, tf.log(y_pred))
+    side_2 = tf.multiply((1 - y_true), tf.log(1 - y_pred))
 
-    calc = tf.reduce_mean(side_1 + side_2)
+    calc = tf.reduce_mean(tf.add(side_1, side_2))
     return - calc
-    #return tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y_pred, labels=y_true))
+    # return tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y_pred, labels=y_true))
 
 
 def accuracy(y_true, y_pred):
     """
     Given ground truth and prediction, compute the mean accuracy.
     """
-
-    calc = tf.abs(y_true - y_pred)
-    return tf.reduce_mean(calc)
+    return tf.reduce_mean(tf.cast(tf.equal(y_true, y_pred), tf.float32))
 
 
 def inference():
@@ -127,7 +125,7 @@ loss = binary_crossentropy(y_true=Y, y_pred=Z)
 acc = accuracy(y_true=Y, y_pred=Z_0_1)
 
 # Instantiate the algorithm for Gradient Descent
-optimizer = tf.train.GradientDescentOptimizer(0.01)
+optimizer = tf.train.GradientDescentOptimizer(1)
 # Given the optimizer and the loss, create an operation representing the training step.
 train_step = optimizer.minimize(loss)
 
@@ -135,7 +133,7 @@ with tf.Session() as sess:
 
     sess.run(tf.global_variables_initializer())
 
-    NUM_EPOCHS = 10000
+    NUM_EPOCHS = 2000
 
     for i in range(0, NUM_EPOCHS):
         sess.run(train_step, feed_dict={X: X_feat_train, Y: Y_train})
@@ -147,8 +145,8 @@ with tf.Session() as sess:
             Y_test_pred = sess.run(
                 Z_0_1, feed_dict={X: X_feat_test, Y: Y_test})
 # {:0.2f}
-            print("Training Loss (CE) : {:0.2f}; Training acc. : {:0.2f}; Test Loss (CE) : {:0.2f} Test acc. : {:0.2f}; ".format(
-                train_loss, train_acc, test_loss, test_acc))
+            print("Training Loss Epoch {} (CE) : {:0.2f}; Training acc. : {:0.2f}; Test Loss (CE) : {:0.2f} Test acc. : {:0.2f}; ".format(
+                int(i / 1000) + 1, train_loss, train_acc, test_loss, test_acc))
 
 # In[ ]:
 
