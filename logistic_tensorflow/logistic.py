@@ -74,13 +74,13 @@ _, n_features = X_feat_train.shape
 
 # define placeholders and variables
 # Define the placeholder for input samples.
-X = tf.placeholder(tf.float32, shape=[None, n_features])
+X = tf.placeholder(tf.float32, shape=(None, n_features))
 # Define the placeholder for the ground truth, in terms of one-hot encoding.
-Y = tf.placeholder(tf.float32, shape=None)
+Y = tf.placeholder(tf.float32, shape=(None,))
 # Define the weight variable
-W = tf.Variable(tf.random_normal([n_features, 1]))
+W = tf.Variable(initial_value=tf.random_normal((n_features, 1)))
 # Define the bias variable
-b = tf.Variable(0.)
+b = tf.Variable(initial_value=0.)
 
 
 # In[ ]:
@@ -89,21 +89,19 @@ def sigmoid(x):
     """
       Code for the sigmoid function. https://en.wikipedia.org/wiki/Logistic_function
     """
-    calc = 1. / (1. + tf.exp(tf.negative(x)))
+    calc = 1. / (1. + tf.exp(-x))
     return calc
-
 
 def binary_crossentropy(y_true, y_pred):
     """
       Code for the binary cross entropy. https://en.wikipedia.org/wiki/Cross_entropy
     """
 
-    side_1 = tf.multiply(y_true, tf.log(y_pred))
-    side_2 = tf.multiply((1 - y_true), tf.log(1 - y_pred))
+    side_1 = y_true * tf.log(y_pred)
+    side_2 = (1 - y_true) * tf.log(1 - y_pred)
 
-    calc = tf.reduce_mean(tf.add(side_1, side_2))
+    calc = tf.reduce_mean(side_1 + side_2)
     return - calc
-    # return tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=y_pred, labels=y_true))
 
 
 def accuracy(y_true, y_pred):
@@ -112,20 +110,21 @@ def accuracy(y_true, y_pred):
     """
     return tf.reduce_mean(tf.cast(tf.equal(y_true, y_pred), tf.float32))
 
-
 def inference():
     pass
 
 
 # Define Z as a linear trasformation over X, then apply the logistic activation function.
-Z = sigmoid(tf.matmul(X, W) + b)
-Z_0_1 = tf.round(Z)  # Define Z_0_1 as a binary value computed from Z
+Z = tf.matmul(X, W) + b
+Z = tf.squeeze(Z)
+Z = sigmoid(Z)
+Z_0_1 = tf.round(Z) # Define Z_0_1 as a binary value computed from Z
 
 loss = binary_crossentropy(y_true=Y, y_pred=Z)
 acc = accuracy(y_true=Y, y_pred=Z_0_1)
 
 # Instantiate the algorithm for Gradient Descent
-optimizer = tf.train.GradientDescentOptimizer(1)
+optimizer = tf.train.GradientDescentOptimizer(learning_rate=1e-1)
 # Given the optimizer and the loss, create an operation representing the training step.
 train_step = optimizer.minimize(loss)
 
@@ -133,7 +132,7 @@ with tf.Session() as sess:
 
     sess.run(tf.global_variables_initializer())
 
-    NUM_EPOCHS = 2000
+    NUM_EPOCHS = 10000
 
     for i in range(0, NUM_EPOCHS):
         sess.run(train_step, feed_dict={X: X_feat_train, Y: Y_train})
