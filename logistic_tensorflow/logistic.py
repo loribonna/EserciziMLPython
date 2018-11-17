@@ -4,8 +4,8 @@
 # In[ ]:
 
 
-get_ipython().system('pip install googledrivedownloader')
-get_ipython().system('pip install scikit-image --upgrade')
+#get_ipython().system('pip install googledrivedownloader')
+#get_ipython().system('pip install scikit-image --upgrade')
 
 
 # In[ ]:
@@ -69,6 +69,7 @@ plt.show()
 
 
 import tensorflow as tf
+from tensorflow.python import debug as tf_debug
 
 _, n_features = X_feat_train.shape
 
@@ -85,11 +86,11 @@ b = tf.Variable(initial_value=0.)
 
 # In[ ]:
 
-def sigmoid(x):
+def sigmoid(x, name=None):
     """
       Code for the sigmoid function. https://en.wikipedia.org/wiki/Logistic_function
     """
-    calc = 1. / (1. + tf.exp(-x))
+    calc = tf.div(1., (1. + tf.exp(-x)), name=name)
     return calc
 
 def binary_crossentropy(y_true, y_pred):
@@ -115,9 +116,9 @@ def inference():
 
 
 # Define Z as a linear trasformation over X, then apply the logistic activation function.
-Z = tf.matmul(X, W) + b
-Z = tf.squeeze(Z)
-Z = sigmoid(Z)
+Z = tf.add(tf.matmul(X, W), b, name="linear_transform_X")
+Z = tf.squeeze(Z, name="squeeze_op")
+Z = sigmoid(Z, name="sigmoid_op")
 Z_0_1 = tf.round(Z) # Define Z_0_1 as a binary value computed from Z
 
 loss = binary_crossentropy(y_true=Y, y_pred=Z)
@@ -129,10 +130,11 @@ optimizer = tf.train.GradientDescentOptimizer(learning_rate=1e-1)
 train_step = optimizer.minimize(loss)
 
 with tf.Session() as sess:
-
+    sess = tf_debug.LocalCLIDebugWrapperSession(sess)
+    sess.add_tensor_filter("has_inf_or_nan", tf_debug.has_inf_or_nan)
     sess.run(tf.global_variables_initializer())
 
-    NUM_EPOCHS = 10000
+    NUM_EPOCHS = 100000
 
     for i in range(0, NUM_EPOCHS):
         sess.run(train_step, feed_dict={X: X_feat_train, Y: Y_train})
