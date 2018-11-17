@@ -129,7 +129,7 @@ optimizer = tf.train.GradientDescentOptimizer(learning_rate=1e-1)
 # Given the optimizer and the loss, create an operation representing the training step.
 train_step = optimizer.minimize(loss)
 
-with tf.Session() as sess:
+with tf.Session() as sess, tf.device('/gpu:0'):
     sess = tf_debug.LocalCLIDebugWrapperSession(sess)
     sess.add_tensor_filter("has_inf_or_nan", tf_debug.has_inf_or_nan)
     sess.run(tf.global_variables_initializer())
