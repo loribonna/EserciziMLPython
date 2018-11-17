@@ -15,6 +15,9 @@ import numpy as np
 from numpy import ndarray
 from matplotlib import pyplot as plt
 
+import tensorflow as tf
+# from tensorflow.python import debug as tf_debug
+
 from google_drive_downloader import GoogleDriveDownloader as gdd
 
 gdd.download_file_from_google_drive(
@@ -62,14 +65,10 @@ random_idx_2 = np.random.choice(np.arange(0, X_1.shape[0]))
 plt.imshow(X_1[random_idx_2], cmap='gray')
 plt.grid(b=False)
 
-plt.show()
+# plt.show()
 
 
 # In[ ]:
-
-
-import tensorflow as tf
-from tensorflow.python import debug as tf_debug
 
 _, n_features = X_feat_train.shape
 
@@ -79,9 +78,9 @@ X = tf.placeholder(tf.float32, shape=(None, n_features))
 # Define the placeholder for the ground truth, in terms of one-hot encoding.
 Y = tf.placeholder(tf.float32, shape=(None,))
 # Define the weight variable
-W = tf.Variable(initial_value=tf.random_normal((n_features, 1)))
+W = tf.get_variable("weights", initializer=tf.random_normal((n_features, 1)))
 # Define the bias variable
-b = tf.Variable(initial_value=0.)
+b = tf.get_variable("bias", initializer=tf.zeros((1)))
 
 
 # In[ ]:
@@ -129,25 +128,32 @@ optimizer = tf.train.GradientDescentOptimizer(learning_rate=1e-1)
 # Given the optimizer and the loss, create an operation representing the training step.
 train_step = optimizer.minimize(loss)
 
+writer = tf.summary.FileWriter('./graphs', tf.get_default_graph())
+
 with tf.Session() as sess, tf.device('/gpu:0'):
-    sess = tf_debug.LocalCLIDebugWrapperSession(sess)
-    sess.add_tensor_filter("has_inf_or_nan", tf_debug.has_inf_or_nan)
+    writer = tf.summary.FileWriter('./graphs', sess.graph)
+
+    #sess = tf_debug.LocalCLIDebugWrapperSession(sess)
+
     sess.run(tf.global_variables_initializer())
 
-    NUM_EPOCHS = 100000
+    NUM_EPOCHS = 10000
 
     for i in range(0, NUM_EPOCHS):
         sess.run(train_step, feed_dict={X: X_feat_train, Y: Y_train})
+        
         if i % 1000 == 0:
             train_loss, train_acc = sess.run(
                 [loss, acc], feed_dict={X: X_feat_train, Y: Y_train})
-            test_loss, test_acc = sess.run([loss, acc], feed_dict={
-                X: X_feat_test, Y: Y_test})
+            test_loss, test_acc = sess.run(
+                [loss, acc], feed_dict={X: X_feat_test, Y: Y_test})
             Y_test_pred = sess.run(
                 Z_0_1, feed_dict={X: X_feat_test, Y: Y_test})
 # {:0.2f}
             print("Training Loss Epoch {} (CE) : {:0.2f}; Training acc. : {:0.2f}; Test Loss (CE) : {:0.2f} Test acc. : {:0.2f}; ".format(
                 int(i / 1000) + 1, train_loss, train_acc, test_loss, test_acc))
+    
+writer.close()
 
 # In[ ]:
 
