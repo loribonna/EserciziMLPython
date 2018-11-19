@@ -1,9 +1,27 @@
 import tensorflow as tf
+from tensorflow import contrib
+from tensorflow.contrib import eager as tfe
 from matplotlib import pyplot as plt
 import numpy as np
 from google_drive_downloader import GoogleDriveDownloader as gdd
-from logistic_class import LogisticRegressionModel
+from logistic_class import LogisticRegressionModel, LogisticRegressionEagerModel
 
+
+def eager_main(n_epochs=10000, plot=True):
+    tfe.enable_eager_execution()
+    X_img_train, X_feat_train, Y_train, X_img_test, X_feat_test, Y_test = load_data()
+
+    _, n_features = X_feat_train.shape
+
+    model = LogisticRegressionEagerModel(n_features, learning_rate=0.01)
+
+    for e in range(0, n_epochs):
+        model.train(X_feat_train, Y_train)
+
+        if e % 1000 == 0:
+            loss = model.train(X_feat_train, Y_train)
+            acc = model.accuracy(X_feat_train, Y_train)
+            print("Epoch Train {}: Loss {}; Accuracy: {}".format(int(e / 1000), loss, acc))
 
 def load_data():
     gdd.download_file_from_google_drive(
@@ -95,4 +113,5 @@ def plot_result(X_img_test, Y_test, Y_test_pred):
 
 
 if __name__ == '__main__':
-    Y_test_pred, test_acc = main(plot=False)
+    #Y_test_pred, test_acc = main(plot=False)
+    eager_main()
