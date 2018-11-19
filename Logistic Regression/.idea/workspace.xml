@@ -2,13 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="fc92cda3-2c40-4b5b-990e-2c9fde4a062b" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/../StanfordTensorflow/requirements.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../logistic_tensorflow/logistic.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../logistic_tensorflow/logistic.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../logistic_tensorflow/mlp.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../.vscode/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/../.vscode/settings.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../logistic_tensorflow/logistic_class.py" beforeDir="false" afterPath="$PROJECT_DIR$/../logistic_tensorflow/logistic_class.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../logistic_tensorflow/logistic_class_runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/../logistic_tensorflow/logistic_class_runner.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -23,12 +19,12 @@
     <session id="-1272105613">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="7" />
+          <entry key="project.closed" value="8" />
           <entry key="project.open.time.0" value="1" />
           <entry key="project.open.time.5" value="1" />
-          <entry key="project.open.time.6" value="4" />
+          <entry key="project.open.time.6" value="5" />
           <entry key="project.open.time.8" value="1" />
-          <entry key="project.opened" value="7" />
+          <entry key="project.opened" value="8" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
@@ -90,7 +86,7 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="591" />
+    <option name="x" value="590" />
     <option name="y" value="65" />
     <option name="width" value="1315" />
     <option name="height" value="825" />
@@ -120,7 +116,7 @@
   <component name="PropertiesComponent">
     <property name="SearchEverywhereHistoryKey" value="format&#9;ACTION&#9;ReformatCode" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../logistic_tensorflow" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
   </component>
@@ -186,7 +182,7 @@
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="1550" height="848" extended-state="6" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.28993288" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.29395974" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />

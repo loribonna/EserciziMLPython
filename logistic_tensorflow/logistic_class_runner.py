@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow import Session
 from matplotlib import pyplot as plt
 import numpy as np
 from google_drive_downloader import GoogleDriveDownloader as gdd
@@ -23,44 +24,79 @@ def load_data():
         '/tmp/Y_train.npy'), np.load('/tmp/X_img_test.npy'), np.load('/tmp/X_feat_test.npy'), np.load('/tmp/Y_test.npy')
 
 
-def main(n_epochs=100000, plot=True):
+def main(n_epochs=100000, plot=True, batch_size=128):
     X_img_train, X_feat_train, Y_train, X_img_test, X_feat_test, Y_test = load_data()
 
     _, n_features = X_feat_train.shape
 
-    X = tf.placeholder(tf.float32, shape=(None, n_features))
-    Y = tf.placeholder(tf.float32, shape=(None,))
+    # Create dataset from data
+    test_dataset = tf.data.Dataset.from_tensor_slices(
+        (X_feat_train, Y_train)).batch(batch_size)
+    train_dataset = tf.data.Dataset.from_tensor_slices(
+        (X_feat_test, Y_test))
+    train_dataset = train_dataset.batch(batch_size)
+    train_dataset = train_dataset.cache()
 
-    model = LogisticRegressionModel(X, Y, n_features, learning_rate=0.45)
+    # Create from structure to model graph structure for both test and train
+    iterator = tf.data.Iterator.from_structure(
+        train_dataset.output_types, train_dataset.output_shapes)
+
+    # Initilize train and test iterators with data
+    train_initializer = iterator.make_initializer(train_dataset)
+    test_initializer = iterator.make_initializer(test_dataset)
+
+    X, Y = iterator.get_next()
+
+    model = LogisticRegressionModel(
+        X, Y, n_features, learning_rate=0.01)
 
     writer = tf.summary.FileWriter('./graphs', tf.get_default_graph())
 
     with tf.Session() as sess, tf.device('/gpu:0'):
         writer = tf.summary.FileWriter('./graphs', sess.graph)
 
-        #sess = tf_debug.LocalCLIDebugWrapperSession(sess)
-
+        # Debug
+        # sess = tf_debug.LocalCLIDebugWrapperSession(sess)
+        
         sess.run(tf.global_variables_initializer())
+        sess.run(train_initializer)
 
         for i in range(0, n_epochs):
-            sess.run(model.optimize, feed_dict={X: X_feat_train, Y: Y_train})
+            try:
+                _ = sess.run(model.optimize)
+            except tf.errors.OutOfRangeError:
+                sess.run(train_initializer)
+                pass
 
             if i % 1000 == 0:
-                train_loss, train_acc = sess.run(
-                    [model.loss, model.accuracy],
-                    feed_dict={X: X_feat_train, Y: Y_train}
-                )
-                test_loss, test_acc = sess.run(
-                    [model.loss, model.accuracy],
-                    feed_dict={X: X_feat_test, Y: Y_test}
-                )
-                Y_test_pred = sess.run(
-                    model.prediction_round,
-                    feed_dict={X: X_feat_test, Y: Y_test}
-                )
+                try:
+                    train_acc, train_loss = sess.run(
+                        [model.accuracy, model.loss])
+                except tf.errors.OutOfRangeError:
+                    sess.run(train_initializer)
+                    train_acc, train_loss = sess.run(
+                        [model.accuracy, model.loss])
+                print("Training Loss {} at Epoch {} with accuracy {}".format(
+                    train_loss, int(i / 1000), train_acc))
 
-                print("Training Loss Epoch {} (CE) : {:0.2f}; Training acc. : {:0.2f}; Test Loss (CE) : {:0.2f} Test acc. : {:0.2f}; ".format(
-                    int(i / 1000) + 1, train_loss, train_acc, test_loss, test_acc))
+
+        sess.run(test_initializer)
+        test_acc_mean = 0
+        test_loss_mean = 0
+        n_batches = 0
+        test_pred = []
+        try:
+            while(True):
+                test_loss, test_acc = sess.run([model.loss, model.accuracy])
+                test_pred.append(sess.run(model.prediction_round))
+                test_acc_mean += test_acc
+                test_loss_mean += test_loss
+                n_batches += 1
+        except tf.errors.OutOfRangeError:
+            test_acc_mean /= n_batches
+            test_loss_mean /= n_batches
+            print("Test Loss (CE) : {:0.2f} Test acc. : {:0.2f}; ".format(
+                test_loss_mean, test_acc_mean))
 
     writer.close()
 
@@ -69,7 +105,7 @@ def main(n_epochs=100000, plot=True):
     if(plot):
         plot_result(X_img_test, Y_test, Y_test_pred)
 
-    return Y_test_pred, test_acc
+    return test_pred, test_acc_mean
 
 
 def plot_result(X_img_test, Y_test, Y_test_pred):

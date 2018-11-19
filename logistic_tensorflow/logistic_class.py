@@ -2,7 +2,9 @@ import functools
 import tensorflow as tf
 import numpy as np
 from tensorflow import Tensor
+from tensorflow.data import Iterator
 from google_drive_downloader import GoogleDriveDownloader as gdd
+
 
 def define_scope(function):
     attribute = '_cache_' + function.__name__
@@ -17,6 +19,7 @@ def define_scope(function):
 
     return decorator
 
+
 def sigmoid(x):
     """
       Code for the sigmoid function. https://en.wikipedia.org/wiki/Logistic_function
@@ -24,13 +27,16 @@ def sigmoid(x):
     calc = tf.div(1., (1. + tf.exp(-x)))
     return calc
 
+
 class LogisticRegressionModel:
 
     def __init__(self, data: Tensor, target: Tensor, n_features: int, learning_rate=1e-1):
-        self.data = data
-        self.target = target
+        self.data = tf.cast(data, tf.float32)
+        self.target = tf.cast(target, tf.float32)
+
         self.n_features = n_features
-        self.rate = learning_rate
+        self._optimizer=tf.train.GradientDescentOptimizer(learning_rate)
+
         self.prediction_round
         self.prediction
         self.optimize
@@ -41,15 +47,16 @@ class LogisticRegressionModel:
     def prediction(self):
         weight = tf.get_variable(
             "weight",
-            initializer=tf.random_normal((self.n_features, 1))
+            initializer=tf.random_normal((self.n_features, ))
         )
         bias = tf.get_variable(
             "bias",
             initializer=tf.zeros((1))
         )
 
-        incoming = tf.matmul(self.data, weight) + bias
-        incoming = tf.squeeze(incoming)
+        incoming = tf.einsum('ij,i->j', tf.transpose(self.data), weight) + bias
+        #incoming = tf.matmul(self.data, weight) + bias
+        #incoming = tf.squeeze(incoming)
 
         return sigmoid(incoming)
 
@@ -62,8 +69,7 @@ class LogisticRegressionModel:
 
     @define_scope
     def optimize(self):
-        optimizer = tf.train.GradientDescentOptimizer(self.rate)
-        return optimizer.minimize(self.loss)
+        return self._optimizer.minimize(self.loss)
 
     @define_scope
     def prediction_round(self):
