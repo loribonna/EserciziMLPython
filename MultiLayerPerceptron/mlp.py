@@ -84,14 +84,15 @@ def inference(x, is_training, n_hidden=256):
         the generalization capabilities and speedup training procedures.
         """
 
-        #layer = tf.contrib.layers.fully_connected(x, n_hidden, activation_fn=tf.nn.sigmoid)
-        #out_t = tf.contrib.layers.fully_connected(layer, 10, activation_fn=tf.nn.softmax)
         data = x
         for l in layers:
-            data = perceptronLayer(data, input_dim, l)
-            input_dim = l
+            data = tf.contrib.layers.fully_connected(data, l, activation_fn=tf.nn.sigmoid)
+        
+            #data = perceptronLayer(data, input_dim, l)
+            #input_dim = l
 
-        y = perceptronLayer(data, layers[-1], n_classes, activation_fn=None, name="out_layer")
+        y = tf.contrib.layers.fully_connected(data, n_classes, activation_fn=None)
+        #y = perceptronLayer(data, layers[-1], n_classes, activation_fn=None, name="out_layer")
 
         return tf.nn.softmax(y)
 
