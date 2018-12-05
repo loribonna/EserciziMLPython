@@ -1,0 +1,9 @@
+version: '2.1'
+
+services:
+  tensorflow-gpu-notebook:
+    image: tensorflow/tensorflow:latest-gpu-py3
+    ports:
+      - 8888:8888
+      - 6006:6006
+

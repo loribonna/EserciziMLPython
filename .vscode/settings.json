@@ -1,4 +1,4 @@
 {
-    "python.pythonPath": "/home/lorib/anaconda3/bin/python",
+    "python.pythonPath": "/media/lorib/ssd_data/Linux_Programs/anaconda3/envs/tensorflow/bin/python",
     "python.linting.pylintEnabled": false
 }

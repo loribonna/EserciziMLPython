@@ -1,0 +1,10 @@
+version: '2.1'
+
+services:
+  mlpython:
+    image: mlpython
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8888:8888
