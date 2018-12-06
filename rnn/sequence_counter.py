@@ -102,8 +102,8 @@ train_data, train_targets, test_data, test_targets = synthetic_dataset.data
 
 #%%
 # Define placeholders
-data = None # Define the placeholder for the input data sequences
-targets = None # Define the placeholder for the ground truth
+data = tf.placeholder(dtype=tf.float32, shape=[None, max_sequence_length, 1])
+targets = tf.placeholder(dtype=tf.float32, shape=[None, max_sequence_length + 1])
 
 class DeepCounter:
 
@@ -127,32 +127,31 @@ class DeepCounter:
 
     def make_inference(self):
         if self.inference is None:
-            """
-            TODO:
-            1) Create a recurrent cell (RNN, LSTM, GRU etc..)
-            2) Create a recurrent neural network specified by the cell, thus 
-            performing a fully dynamic unrolling of the inputs (stored in self.x)
-            3) Take the last output of the sequence
-            4) Append a classification layer.
-            """"
-            self.inference = None
+            cell = tf.nn.rnn_cell.GRUCell(self.hidden_size, activation=tf.nn.relu)
+
+            out, state = tf.nn.dynamic_rnn(cell, self.x, dtype=tf.float32)
+            last = out[:,-1,:]
+            
+            self.inference = tf.layers.dense(last, self.n_classes, activation=tf.nn.softmax)
 
     def make_loss(self):
         if self.loss is None:
-            self.loss = # Build cross-entropy loss
+            self.loss = -tf.reduce_mean(tf.reduce_sum(self.targets * tf.log(self.inference)))
 
     def make_train_step(self):
-         and training step
         if self.train_step is None:
-            optimizer = # Define Optimizer
-            self.train_step = # Define the training step
+            optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
+            self.train_step = optimizer.minimize(self.loss)
 
     def make_accuracy(self):
         if self.accuracy is None:
-            correct_predictions = None # Define the accuracy tensor
+            pred_index = tf.argmax(self.inference, axis=1)
+            targ_index = tf.argmax(self.targets, axis=1)
+            self.accuracy = tf.reduce_mean(
+                tf.cast(tf.equal(pred_index, targ_index), dtype=tf.float32)
+            )
 
 deep_counter = DeepCounter(x=data, targets=targets, hidden_size=hidden_size)
-
 #%% [markdown]
 # #Training and Test
 # 
@@ -221,7 +220,7 @@ print('Average accuracy on test set: {:.03f}'.format(accuracy_score / num_test_b
 print('\n' + 50 * '*' + '\nInteractive Session\n' + 50 * '*')
 
 while True:
-    my_sequence = raw_input('Write your own binary sequence 10 digits in {0, 1}:\n')
+    my_sequence = input('Write your own binary sequence 10 digits in {0, 1}:\n')
     if my_sequence:
 
         # Pad shorter sequences
