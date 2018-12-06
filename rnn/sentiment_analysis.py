@@ -2,7 +2,7 @@
 # Install proper packages
 
 #%%
-get_ipython().system('pip install googledrivedownloader')
+#get_ipython().system('pip install googledrivedownloader')
 
 #%% [markdown]
 # Import proper packages and download tweets data
@@ -181,18 +181,26 @@ class TweetModel(object):
         self.make_accuracy()
 
     def make_inference(self):
+        cell = tf.nn.rnn_cell.GRUCell(self.hidden_size, activation=tf.nn.tanh)
 
-        # Define the final prediction applying a fully connected layer with softmax
-        self.inference = None
+        out, state = tf.nn.dynamic_rnn(cell, self.x, dtype=tf.float32)
+
+        last = out[:,-1,:]
+
+        self.inference = tf.layers.dense(last, self.n_classes, activation=tf.nn.softmax)
 
     def make_loss(self):
-        self.loss = None
+        self.loss = -tf.reduce_mean(tf.reduce_sum(self.targets * tf.log(self.inference)))
 
     def make_train_step(self):
-        self.train_step = None
+        self.train_step = tf.train.AdamOptimizer(learning_rate=0.001).minimize(self.loss)
         
     def make_accuracy(self):
-        self.accuracy = None
+        pred_index = tf.argmax(self.inference, axis=1)
+        targ_index = tf.argmax(self.targets, axis=1)
+        self.accuracy = tf.reduce_mean(
+            tf.cast(tf.equal(pred_index, targ_index), dtype=tf.float32)
+        )
 
 #%% [markdown]
 # #My solution
@@ -220,7 +228,7 @@ def last_relevant(output, length):
     relevant = tf.gather(flat, index)
     return relevant
 
-
+"""
 class TweetModel(object):
 
     def __init__(self, x, targets, hidden_size):
@@ -264,6 +272,7 @@ class TweetModel(object):
     def make_accuracy(self):
         mistakes = tf.equal(tf.argmax(self.inference, axis=1), tf.argmax(self.targets, axis=1))
         self.accuracy = tf.reduce_mean(tf.cast(mistakes, tf.float32))
+"""
 
 #%% [markdown]
 # #Training and Test
@@ -356,7 +365,7 @@ for epoch in range(training_epochs):
 #%%
 # Interactive session
 while True:
-    tw = raw_input('Try tweeting something!')
+    tw = input('Try tweeting something!')
     if tw:
         x_num = loader.vectorize(tweet=tw)
         p, = sess.run([model.inference], feed_dict={x: x_num})
